@@ -103,6 +103,7 @@ WARNING
         create_database_yml
         install_binaries
         run_assets_precompile_rake_task
+        run_assets_symlink_rake_task
       end
       best_practice_warnings
       super
@@ -783,6 +784,32 @@ params = CGI.parse(uri.query || "")
   def precompile_fail(output)
     log "assets_precompile", :status => "failure"
     msg = "Precompiling assets failed.\n"
+    if output.match(/(127\.0\.0\.1)|(org\.postgresql\.util)/)
+      msg << "Attempted to access a nonexistent database:\n"
+      msg << "https://devcenter.heroku.com/articles/pre-provision-database\n"
+    end
+    error msg
+  end
+
+  def run_assets_symlink_rake_task
+    instrument 'ruby.run_assets_symlink_rake_task' do
+
+      soft_links = rake.task("assets:soft_links")
+      return true unless soft_links.is_defined?
+
+      topic "Symlinking assets"
+      soft_links.invoke(env: rake_env)
+      if soft_links.success?
+        puts "Asset symlinking completed (#{"%.2f" % soft_links.time}s)"
+      else
+        symlinking_fail(soft_links.output)
+      end
+    end
+  end
+
+  def symlinking_fail(output)
+    log "assets_symlink", :status => "failure"
+    msg = "Symlinking assets failed.\n"
     if output.match(/(127\.0\.0\.1)|(org\.postgresql\.util)/)
       msg << "Attempted to access a nonexistent database:\n"
       msg << "https://devcenter.heroku.com/articles/pre-provision-database\n"
