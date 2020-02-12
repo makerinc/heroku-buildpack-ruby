@@ -15,6 +15,7 @@ begin
   LanguagePack::Instrument.trace 'compile', 'app.compile' do
     LanguagePack::ShellHelpers.initialize_env(ARGV[2])
     if pack = LanguagePack.detect(ARGV[0], ARGV[1])
+      puts ">>>>> PACK >>>> #{pack.name} >>>> #{ARGV[0]} >>>> #{ARGV[1]}"
       pack.topic("Compiling #{pack.name}")
       pack.log("compile") do
         pack.compile

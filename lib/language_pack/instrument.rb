@@ -11,6 +11,7 @@ module LanguagePack
     end
 
     def self.instrument(cat, title = "", *args)
+      puts ">>>>>>>>>>>> #{cat}"
       ret        = nil
       start_time = DateTime.now.iso8601(6)
       duration = Benchmark.realtime do

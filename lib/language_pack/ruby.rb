@@ -91,26 +91,41 @@ WARNING
       # check for new app at the beginning of the compile
       new_app?
       Dir.chdir(build_path)
+      puts ">>>> custom >>> remove_vendor_bundle"
       remove_vendor_bundle
+      puts ">>>>>>>>>>>> warn_bundler_upgrade"
       warn_bundler_upgrade
+      puts ">>>> custom >>> install_ruby"
       install_ruby
+      puts ">>>> custom >>> install_jvm"
       install_jvm
+      puts ">>>> custom >>> setup_language_pack_environment"
       setup_language_pack_environment
+      puts ">>>> custom >>> setup_export"
       setup_export
+      puts ">>>> custom >>> setup_profiled"
       setup_profiled
+      puts ">>>> custom >>> allow_git"
       allow_git do
         vendor_libpq
         install_bundler_in_app
         build_bundler("development:test")
         post_bundler
+        puts ">>>> custom >>> create_database_yml"
         create_database_yml
+        puts ">>>> custom >>> install_binaries"
         install_binaries
+        puts ">>>> custom >>> run_assets_precompile_rake_task"
         run_assets_precompile_rake_task
         run_assets_symlink_rake_task
       end
+      puts ">>>> custom >>> config_detect"
       config_detect
+      puts ">>>> custom >>> best_practice_warnings"
       best_practice_warnings
+      puts ">>>> custom >>> warn_outdated_ruby"
       warn_outdated_ruby
+      puts ">>>> custom >>> cleanup"
       cleanup
       super
     end

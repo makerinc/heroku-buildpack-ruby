@@ -7,6 +7,8 @@ class LanguagePack::Rails42 < LanguagePack::Rails41
   def self.use?
     instrument "rails42.use" do
       rails_version = bundler.gem_version('railties')
+
+      puts ">>>>> RAILS42 >>>> #{rails_version}"
       return false unless rails_version
       is_rails42 = rails_version >= Gem::Version.new('4.2.0') &&
                    rails_version <  Gem::Version.new('5.0.0')
