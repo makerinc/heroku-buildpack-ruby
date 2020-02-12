@@ -13,7 +13,7 @@ class LanguagePack::Metadata
 
   def read(key)
     full_key = "#{FOLDER}/#{key}"
-    File.read(full_key) if exists?(key)
+    File.read(full_key).chomp if exists?(key)
   end
 
   def exists?(key)
@@ -27,6 +27,21 @@ class LanguagePack::Metadata
     full_key = "#{FOLDER}/#{key}"
     File.open(full_key, 'w') {|f| f.puts value }
     save if isave
+
+    return true
+  end
+
+  def touch(key)
+    write(key, "true")
+  end
+
+  def fetch(key)
+    return read(key) if exists?(key)
+
+    value = yield
+
+    write(key, value.to_s)
+    return value
   end
 
   def save

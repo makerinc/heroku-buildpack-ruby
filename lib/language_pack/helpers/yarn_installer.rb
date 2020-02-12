@@ -4,14 +4,14 @@ class LanguagePack::Helpers::YarnInstaller
   def initialize
     # Grab latest yarn, until release practice stabilizes
     # https://github.com/yarnpkg/yarn/issues/376#issuecomment-253366910
-    nodebin  = LanguagePack::Helpers::Nodebin.yarn("latest")
+    nodebin  = LanguagePack::Helpers::Nodebin.yarn
     @version = nodebin["number"]
     @url     = nodebin["url"]
     @fetcher = LanguagePack::Fetcher.new("")
   end
 
   def name
-    "yarn-#{@version}"
+    "yarn-v#{@version}"
   end
 
   def binary_path
@@ -21,10 +21,10 @@ class LanguagePack::Helpers::YarnInstaller
   def install
     Dir.mktmpdir do |dir|
       Dir.chdir(dir) do
-        @fetcher.fetch_untar(@url, "dist")
+        @fetcher.fetch_untar(@url)
       end
 
-      FileUtils.mv("#{dir}/dist", name)
+      FileUtils.mv(File.join(dir, name), name)
     end
   end
 end
