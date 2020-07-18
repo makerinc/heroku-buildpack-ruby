@@ -5,6 +5,17 @@ require "language_pack/rails3"
 class LanguagePack::Rails4 < LanguagePack::Rails3
   ASSETS_CACHE_LIMIT = 52428800 # bytes
 
+  ASSET_PATHS = %w[
+    public/packs
+    ~/.yarn-cache
+    ~/.cache/yarn
+  ]
+
+  ASSET_CACHE_PATHS = %w[
+    node_modules
+    tmp/cache/webpacker
+  ]
+
   # detects if this is a Rails 4.x app
   # @return [Boolean] true if it's a Rails 4.x app
   def self.use?
@@ -69,8 +80,14 @@ WARNING
   def cleanup
     super
     return if assets_compile_enabled?
-    return unless Dir.exist?(default_assets_cache)
-    FileUtils.remove_dir(default_assets_cache)
+
+    puts "Removing non-essential asset cache directories"
+
+    FileUtils.remove_dir(default_assets_cache) if Dir.exist?(default_assets_cache)
+
+    self.class::ASSET_CACHE_PATHS.each do |path|
+      FileUtils.remove_dir(path) if Dir.exist?(path)
+    end
   end
 
   def run_assets_precompile_rake_task
@@ -86,8 +103,7 @@ WARNING
 
         topic("Preparing app for Rails asset pipeline")
 
-        @cache.load_without_overwrite public_assets_folder
-        @cache.load default_assets_cache
+        load_asset_cache
 
         precompile.invoke(env: rake_env)
 
@@ -99,13 +115,30 @@ WARNING
           rake.task("assets:clean").invoke(env: rake_env)
 
           cleanup_assets_cache
-          @cache.store public_assets_folder
-          @cache.store default_assets_cache
+          store_asset_cache
         else
           precompile_fail(precompile.output)
         end
       end
     end
+  end
+
+  def load_asset_cache
+    puts "Loading asset cache"
+    @cache.load_without_overwrite public_assets_folder
+    @cache.load default_assets_cache
+
+    paths = (self.class::ASSET_PATHS + self.class::ASSET_CACHE_PATHS)
+    paths.each { |path| @cache.load path }
+  end
+
+  def store_asset_cache
+    puts "Storing asset cache"
+    @cache.store public_assets_folder
+    @cache.store default_assets_cache
+
+    paths = (self.class::ASSET_PATHS + self.class::ASSET_CACHE_PATHS)
+    paths.each { |path| @cache.store path }
   end
 
   def cleanup_assets_cache
