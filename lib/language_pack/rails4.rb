@@ -78,7 +78,8 @@ WARNING
   end
 
   def cleanup
-    super
+    # does not call super because it would return if default_assets_cache was missing
+    # child classes should call super and should not use a return statement
     return if assets_compile_enabled?
 
     puts "Removing non-essential asset cache directories"
