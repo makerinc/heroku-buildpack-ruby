@@ -6,6 +6,7 @@ class LanguagePack::Rails4 < LanguagePack::Rails3
   ASSETS_CACHE_LIMIT = 52428800 # bytes
 
   ASSET_PATHS = %w[
+    public/packs
     ~/.yarn-cache
     ~/.cache/yarn
   ]
