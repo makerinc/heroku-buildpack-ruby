@@ -5,17 +5,6 @@ require "language_pack/rails3"
 class LanguagePack::Rails4 < LanguagePack::Rails3
   ASSETS_CACHE_LIMIT = 52428800 # bytes
 
-  ASSET_PATHS = %w[
-    public/packs
-    ~/.yarn-cache
-    ~/.cache/yarn
-  ]
-
-  ASSET_CACHE_PATHS = %w[
-    node_modules
-    tmp/cache/webpacker
-  ]
-
   # detects if this is a Rails 4.x app
   # @return [Boolean] true if it's a Rails 4.x app
   def self.use?
@@ -35,15 +24,9 @@ class LanguagePack::Rails4 < LanguagePack::Rails3
   def default_process_types
     instrument "rails4.default_process_types" do
       super.merge({
-        "web"     => "bin/rails server -p $PORT -e $RAILS_ENV",
+        "web"     => "bin/rails server -p ${PORT:-5000} -e $RAILS_ENV",
         "console" => "bin/rails console"
       })
-    end
-  end
-
-  def build_bundler(default_bundle_without)
-    instrument "rails4.build_bundler" do
-      super
     end
   end
 
@@ -78,17 +61,10 @@ WARNING
   end
 
   def cleanup
-    # does not call super because it would return if default_assets_cache was missing
-    # child classes should call super and should not use a return statement
+    super
     return if assets_compile_enabled?
-
-    puts "Removing non-essential asset cache directories"
-
-    FileUtils.remove_dir(default_assets_cache) if Dir.exist?(default_assets_cache)
-
-    self.class::ASSET_CACHE_PATHS.each do |path|
-      FileUtils.remove_dir(path) if Dir.exist?(path)
-    end
+    return unless Dir.exist?(default_assets_cache)
+    FileUtils.remove_dir(default_assets_cache)
   end
 
   def run_assets_precompile_rake_task
@@ -100,11 +76,12 @@ WARNING
         end
 
         precompile = rake.task("assets:precompile")
-        return true unless precompile.is_defined?
+        return true if precompile.not_defined?
 
         topic("Preparing app for Rails asset pipeline")
 
-        load_asset_cache
+        @cache.load_without_overwrite public_assets_folder
+        @cache.load default_assets_cache
 
         precompile.invoke(env: rake_env)
 
@@ -112,34 +89,20 @@ WARNING
           log "assets_precompile", :status => "success"
           puts "Asset precompilation completed (#{"%.2f" % precompile.time}s)"
 
-          puts "Cleaning assets"
-          rake.task("assets:clean").invoke(env: rake_env)
+          clean_task = rake.task("assets:clean")
+          if clean_task.task_defined?
+            puts "Cleaning assets"
+            clean_task.invoke(env: rake_env)
 
-          cleanup_assets_cache
-          store_asset_cache
+            cleanup_assets_cache
+            @cache.store public_assets_folder
+            @cache.store default_assets_cache
+          end
         else
           precompile_fail(precompile.output)
         end
       end
     end
-  end
-
-  def load_asset_cache
-    puts "Loading asset cache"
-    @cache.load_without_overwrite public_assets_folder
-    @cache.load default_assets_cache
-
-    paths = (self.class::ASSET_PATHS + self.class::ASSET_CACHE_PATHS)
-    paths.each { |path| @cache.load path }
-  end
-
-  def store_asset_cache
-    puts "Storing asset cache"
-    @cache.store public_assets_folder
-    @cache.store default_assets_cache
-
-    paths = (self.class::ASSET_PATHS + self.class::ASSET_CACHE_PATHS)
-    paths.each { |path| @cache.store path }
   end
 
   def cleanup_assets_cache
