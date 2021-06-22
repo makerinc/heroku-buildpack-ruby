@@ -104,7 +104,7 @@ WARNING
 
         topic("Preparing app for Rails asset pipeline")
 
-        load_asset_cache
+        # load_asset_cache
 
         precompile.invoke(env: rake_env)
 
